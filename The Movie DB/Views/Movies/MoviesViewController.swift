@@ -7,16 +7,14 @@
 
 import UIKit
 
-class MoviesViewController: UIViewController {
+class MoviesViewController: UICollectionViewController {
 
     private let viewModel: MoviesViewModel
-    private let tableView = UITableView()
-
     var didSelectMovie: ((Movie) -> Void)?
 
     init(viewModel: MoviesViewModel) {
         self.viewModel = viewModel
-        super.init(nibName: nil, bundle: nil)
+        super.init(collectionViewLayout: .createCompositionalLayout())
     }
 
     required init?(coder: NSCoder) {
@@ -26,25 +24,20 @@ class MoviesViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Movies"
-        view.backgroundColor = .white
-
-        setupTableView()
+        setupCollectionView()
         bindViewModel()
         viewModel.fetchMovies()
     }
 
-    private func setupTableView() {
-        tableView.frame = view.bounds
-        tableView.dataSource = self
-        tableView.delegate = self
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
-        view.addSubview(tableView)
+    private func setupCollectionView() {
+        collectionView.backgroundColor = .systemBackground
+        collectionView.register(MovieCell.self, forCellWithReuseIdentifier: MovieCell.cellIdentifier)
     }
 
     private func bindViewModel() {
         viewModel.onMoviesUpdated = { [weak self] in
             DispatchQueue.main.async {
-                self?.tableView.reloadData()
+                self?.collectionView.reloadData()
             }
         }
 
@@ -62,21 +55,20 @@ class MoviesViewController: UIViewController {
     }
 }
 
-extension MoviesViewController: UITableViewDataSource {
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+extension MoviesViewController {
+
+    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return viewModel.movies.count
     }
 
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MovieCell.cellIdentifier, for: indexPath) as! MovieCell
         let movie = viewModel.movies[indexPath.row]
-        cell.textLabel?.text = movie.title
+        cell.configure(with: movie)
         return cell
     }
-}
 
-extension MoviesViewController: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let movie = viewModel.movies[indexPath.row]
         didSelectMovie?(movie)
     }
