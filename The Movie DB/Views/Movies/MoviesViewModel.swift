@@ -19,7 +19,7 @@ class MoviesViewModel {
             onMoviesUpdated?()
         }
     }
-
+    
     var onMoviesUpdated: (() -> Void)?
     var onError: ((String) -> Void)?
     
@@ -45,7 +45,7 @@ class MoviesViewModel {
                 isLoading = false
             } catch let error as APIError {
                 isLoading = false
-                onError?(error.localizedDescription)
+                onError?(error.errorDescription ?? "An unexpected error occurred.")
             } catch {
                 isLoading = false
                 onError?("An unexpected error occurred: \(error.localizedDescription)")

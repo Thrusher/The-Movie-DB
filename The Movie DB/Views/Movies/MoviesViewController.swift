@@ -43,20 +43,31 @@ class MoviesViewController: UICollectionViewController {
 
         viewModel.onError = { [weak self] error in
             DispatchQueue.main.async {
-                self?.showErrorAlert(message: error)
+                guard let self else { return }
+                self.showErrorAlert(message: error, showRetryButton: self.viewModel.movies.isEmpty) {
+                    self.viewModel.fetchMovies()
+                }
             }
         }
     }
-
-    private func showErrorAlert(message: String) {
+    
+    private func showErrorAlert(message: String, showRetryButton: Bool = false, retryAction: (() -> Void)? = nil) {
         let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
+        
+        if showRetryButton {
+            let retryButton = UIAlertAction(title: "Retry", style: .default) { _ in
+                retryAction?()
+            }
+            alert.addAction(retryButton)
+        }
+        
         present(alert, animated: true)
     }
 }
 
 extension MoviesViewController {
-
+    
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return viewModel.movies.count
     }

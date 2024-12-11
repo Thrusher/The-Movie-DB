@@ -14,7 +14,7 @@ protocol APIClientProtocol {
  class APIClient: APIClientProtocol {
     private let baseURL = "https://api.themoviedb.org/3"
     private let apiKey = "4f57007d7fd386a068d851597acfb9df"
-    
+
     func fetch<T: Decodable>(_ endpoint: APIEndpoint, responseType: T.Type) async throws -> T {
 
         guard let url = URL(string: baseURL + endpoint.path) else {
