@@ -7,8 +7,18 @@
 
 import Foundation
 
-class MovieService {
-    private let apiClient = APIClient()
+protocol MovieServiceProtocol {
+    func fetchNowPlayingMovies(page: Int) async throws -> [Movie]
+    func searchMovies(query: String, page: Int) async throws -> [Movie]
+}
+
+class MovieService: MovieServiceProtocol {
+    
+    private let apiClient: APIClientProtocol
+    
+    init (apiClient: APIClientProtocol = APIClient()) {
+        self.apiClient = apiClient
+    }
     
     func fetchNowPlayingMovies(page: Int = 1) async throws -> [Movie] {
         let endpoint = APIEndpoint(path: "/movie/now_playing", parameters: ["page": "\(page)"])

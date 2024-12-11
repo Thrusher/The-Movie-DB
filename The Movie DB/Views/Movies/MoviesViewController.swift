@@ -64,7 +64,7 @@ extension MoviesViewController {
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MovieCell.cellIdentifier, for: indexPath) as! MovieCell
         let movie = viewModel.movies[indexPath.row]
-        cell.configure(with: movie)
+        cell.configure(with: movie, imageService: viewModel.imageService)
         return cell
     }
 

@@ -8,7 +8,9 @@
 import Foundation
 
 class MoviesViewModel {
-    private let movieService = MovieService() // Service for API requests
+    let movieService: MovieServiceProtocol
+    let imageService: ImageServiceProtocol
+    
     private var currentPage = 1
     private var isLoading = false
 
@@ -21,6 +23,11 @@ class MoviesViewModel {
     // Callbacks to update the UI
     var onMoviesUpdated: (() -> Void)?
     var onError: ((String) -> Void)?
+    
+    init(movieService: MovieServiceProtocol, imageService: ImageServiceProtocol) {
+        self.movieService = movieService
+        self.imageService = imageService
+    }
 
     /// Fetch popular movies (default list)
     func fetchMovies(reset: Bool = false) {

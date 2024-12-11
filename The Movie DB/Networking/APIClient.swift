@@ -5,9 +5,13 @@
 //  Created by Patryk Drozd on 09/12/2024.
 //
 
-import Foundation
+import UIKit
 
-final class APIClient {
+protocol APIClientProtocol {
+    func fetch<T: Decodable>(_ endpoint: APIEndpoint, responseType: T.Type) async throws -> T
+}
+
+ class APIClient: APIClientProtocol {
     private let baseURL = "https://api.themoviedb.org/3"
     private let apiKey = "4f57007d7fd386a068d851597acfb9df"
     
@@ -69,4 +73,3 @@ final class APIClient {
         }
     }
 }
-

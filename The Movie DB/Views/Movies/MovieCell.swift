@@ -74,26 +74,17 @@ final class MovieCell: UICollectionViewCell {
     }
 
     // MARK: - Configuration
-    func configure(with movie: Movie) {
+    func configure(with movie: Movie, imageService: ImageServiceProtocol) {
         activityIndicator.startAnimating()
 
         posterImageView.image = nil
 
         if let posterPath = movie.posterPath {
             let urlString = "https://image.tmdb.org/t/p/w500\(posterPath)"
-            if let url = URL(string: urlString) {
-                DispatchQueue.global().async {
-                    if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
-                        DispatchQueue.main.async {
-                            self.posterImageView.image = image
-                            self.activityIndicator.stopAnimating()
-                        }
-                    } else {
-                        DispatchQueue.main.async {
-                            self.activityIndicator.stopAnimating()
-                            self.posterImageView.image = UIImage(systemName: "film")
-                        }
-                    }
+            imageService.loadImage(from: urlString) { [weak self] image in
+                DispatchQueue.main.async {
+                    self?.activityIndicator.stopAnimating()
+                    self?.posterImageView.image = image ?? UIImage(systemName: "film")
                 }
             }
         } else {

@@ -19,7 +19,10 @@ class MoviesCoordinator: Coordinator {
     }
 
     func showMovies() {
-        let viewModel = MoviesViewModel()
+        let imageCacheService = ImageService()
+        let movieService = MovieService(apiClient: APIClient())
+        let viewModel = MoviesViewModel(movieService: movieService,
+                                        imageService: imageCacheService)
         let moviesViewController = MoviesViewController(viewModel: viewModel)
         moviesViewController.didSelectMovie = { [weak self] movie in
             self?.showMovieDetails(movie)
