@@ -23,13 +23,12 @@ class ImageService: ImageServiceProtocol {
     }
     
     func loadImage(from urlString: String, completion: @escaping (UIImage?) -> Void) {
-        // Check cache first
+
         if let cachedImage = getImage(forKey: urlString) {
             completion(cachedImage)
             return
         }
-        
-        // Download image if not in cache
+
         guard let url = URL(string: urlString) else {
             completion(nil)
             return
@@ -41,7 +40,6 @@ class ImageService: ImageServiceProtocol {
                 return
             }
             
-            // Cache the image
             self.setImage(image, forKey: urlString)
             completion(image)
         }.resume()

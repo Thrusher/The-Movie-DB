@@ -20,7 +20,6 @@ class MoviesViewModel {
         }
     }
 
-    // Callbacks to update the UI
     var onMoviesUpdated: (() -> Void)?
     var onError: ((String) -> Void)?
     
@@ -29,9 +28,8 @@ class MoviesViewModel {
         self.imageService = imageService
     }
 
-    /// Fetch popular movies (default list)
     func fetchMovies(reset: Bool = false) {
-        guard !isLoading else { return } // Prevent duplicate requests
+        guard !isLoading else { return }
 
         if reset {
             currentPage = 1
@@ -55,7 +53,6 @@ class MoviesViewModel {
         }
     }
 
-    /// Refresh the movie list
     func refreshMovies() {
         fetchMovies(reset: true)
     }

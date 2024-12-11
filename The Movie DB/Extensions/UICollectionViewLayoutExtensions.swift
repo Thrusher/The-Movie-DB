@@ -10,16 +10,16 @@ import UIKit
 extension UICollectionViewLayout {
     static func createCompositionalLayout() -> UICollectionViewCompositionalLayout {
         return UICollectionViewCompositionalLayout { _, environment -> NSCollectionLayoutSection? in
-            let maxCellWidth: CGFloat = 180 // Maximum width for a cell
-            let spacing: CGFloat = 16 // Desired spacing between cells
+            let maxCellWidth: CGFloat = 180
+            let spacing: CGFloat = 16
+            let minimumColumns: CGFloat = 2
 
-            // Calculate number of columns dynamically
             let availableWidth = environment.container.effectiveContentSize.width - (spacing * 2)
-            let numberOfColumns = floor(availableWidth / maxCellWidth)
+            let calculatedColumns = floor(availableWidth / maxCellWidth)
+            let numberOfColumns = max(minimumColumns, calculatedColumns)
             let cellWidth = (availableWidth - (spacing * (numberOfColumns - 1))) / numberOfColumns
-            let cellHeight = cellWidth * 1.5 // Maintain aspect ratio
+            let cellHeight = cellWidth * 1.5
 
-            // Item
             let itemSize = NSCollectionLayoutSize(
                 widthDimension: .absolute(cellWidth),
                 heightDimension: .absolute(cellHeight)
@@ -27,7 +27,6 @@ extension UICollectionViewLayout {
             let item = NSCollectionLayoutItem(layoutSize: itemSize)
             item.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
 
-            // Group
             let groupSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0),
                 heightDimension: .absolute(cellHeight)
@@ -38,7 +37,6 @@ extension UICollectionViewLayout {
             )
             group.interItemSpacing = .fixed(spacing)
 
-            // Section
             let section = NSCollectionLayoutSection(group: group)
             section.contentInsets = NSDirectionalEdgeInsets(top: spacing, leading: spacing, bottom: spacing, trailing: spacing)
             section.interGroupSpacing = spacing
