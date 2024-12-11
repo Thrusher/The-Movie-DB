@@ -8,6 +8,12 @@
 import UIKit
 
 final class MoviesViewController: UICollectionViewController {
+    
+    enum MoviesSection: Hashable {
+        case main
+    }
+    
+    private var dataSource: UICollectionViewDiffableDataSource<MoviesSection, Movie>!
 
     private let viewModel: MoviesViewModel
     private weak var loaderView: LoaderView?
@@ -27,13 +33,33 @@ final class MoviesViewController: UICollectionViewController {
         super.viewDidLoad()
         title = "Movies"
         setupCollectionView()
+        setupDataSource()
         bindViewModel()
         viewModel.fetchMovies()
+    }
+    
+    override func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let offsetY = scrollView.contentOffset.y
+        let contentHeight = scrollView.contentSize.height
+        let height = scrollView.frame.size.height
+
+        if offsetY > contentHeight - height - 100 {
+            viewModel.fetchMovies()
+        }
     }
 
     private func setupCollectionView() {
         collectionView.backgroundColor = .systemBackground
         collectionView.register(MovieCell.self, forCellWithReuseIdentifier: MovieCell.cellIdentifier)
+    }
+    
+    private func setupDataSource() {
+        dataSource = UICollectionViewDiffableDataSource<MoviesSection, Movie>(collectionView: collectionView) { collectionView, indexPath, movie in
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MovieCell.cellIdentifier, for: indexPath) as! MovieCell
+            let movie = self.viewModel.movies[indexPath.row]
+            cell.configure(with: movie, imageService: self.viewModel.imageService)
+            return cell
+        }
     }
     
     private func showLoaderView() {
@@ -54,11 +80,25 @@ final class MoviesViewController: UICollectionViewController {
     private func removeLoderView() {
         loaderView?.removeFromSuperview()
     }
+    
+    private func applySnapshot(animatingDifferences: Bool = true) {
+        let movieIDs = viewModel.movies.map { $0.id }
+        let duplicates = movieIDs.filter { id in
+            movieIDs.filter { $0 == id }.count > 1
+        }
+
+        assert(duplicates.isEmpty, "Duplicate movie IDs found: \(duplicates)")
+        
+        var snapshot = NSDiffableDataSourceSnapshot<MoviesSection, Movie>()
+        snapshot.appendSections([.main])
+        snapshot.appendItems(viewModel.movies, toSection: .main)
+        dataSource.apply(snapshot, animatingDifferences: animatingDifferences)
+    }
 
     private func bindViewModel() {
         viewModel.onMoviesUpdated = { [weak self] in
             DispatchQueue.main.async {
-                self?.collectionView.reloadData()
+                self?.applySnapshot()
             }
         }
 
@@ -74,7 +114,7 @@ final class MoviesViewController: UICollectionViewController {
         viewModel.onLoadingStateChange = { [weak self] isLoading in
             guard let self else { return }
             DispatchQueue.main.async {
-                if isLoading {
+                if isLoading && self.viewModel.movies.isEmpty {
                     self.showLoaderView()
                 } else {
                     self.removeLoderView()
@@ -99,18 +139,6 @@ final class MoviesViewController: UICollectionViewController {
 }
 
 extension MoviesViewController {
-    
-    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return viewModel.movies.count
-    }
-
-    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MovieCell.cellIdentifier, for: indexPath) as! MovieCell
-        let movie = viewModel.movies[indexPath.row]
-        cell.configure(with: movie, imageService: viewModel.imageService)
-        return cell
-    }
-
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let movie = viewModel.movies[indexPath.row]
         didSelectMovie?(movie)

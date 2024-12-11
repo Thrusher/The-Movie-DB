@@ -8,7 +8,7 @@
 import Foundation
 
 protocol MovieServiceProtocol {
-    func fetchNowPlayingMovies(page: Int) async throws -> [Movie]
+    func fetchNowPlayingMovies(page: Int) async throws -> MovieResponse
     func searchMovies(query: String, page: Int) async throws -> [Movie]
 }
 
@@ -20,9 +20,9 @@ final class MovieService: MovieServiceProtocol {
         self.apiClient = apiClient
     }
     
-    func fetchNowPlayingMovies(page: Int = 1) async throws -> [Movie] {
+    func fetchNowPlayingMovies(page: Int = 1) async throws -> MovieResponse {
         let endpoint = APIEndpoint(path: "/movie/now_playing", parameters: ["page": "\(page)"])
-        return try await apiClient.fetch(endpoint, responseType: MovieResponse.self).results
+        return try await apiClient.fetch(endpoint, responseType: MovieResponse.self)
     }
     
     func searchMovies(query: String, page: Int = 1) async throws -> [Movie] {

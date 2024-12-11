@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Movie: Codable {
+struct Movie: Codable, Hashable {
     let id: Int
     let title: String
     let overview: String
@@ -19,8 +19,23 @@ struct Movie: Codable {
         case overview
         case posterPath = "poster_path"
     }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(title)
+    }
+
+    static func == (lhs: Movie, rhs: Movie) -> Bool {
+        return lhs.id == rhs.id && lhs.title == rhs.title
+    }
 }
 
 struct MovieResponse: Codable {
     let results: [Movie]
+    let totalPages: Int
+    
+    enum CodingKeys: String, CodingKey {
+        case results
+        case totalPages = "total_pages"
+    }
 }
