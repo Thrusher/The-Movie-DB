@@ -33,6 +33,7 @@ final class MoviesViewController: UICollectionViewController {
         super.viewDidLoad()
         title = "Movies"
         setupCollectionView()
+        setupRefreshControl()
         setupDataSource()
         bindViewModel()
         viewModel.fetchMovies()
@@ -51,6 +52,12 @@ final class MoviesViewController: UICollectionViewController {
     private func setupCollectionView() {
         collectionView.backgroundColor = .systemBackground
         collectionView.register(MovieCell.self, forCellWithReuseIdentifier: MovieCell.cellIdentifier)
+    }
+    
+    private func setupRefreshControl() {
+        let refreshControl = UIRefreshControl()
+        refreshControl.addTarget(self, action: #selector(refreshMovies), for: .valueChanged)
+        collectionView.refreshControl = refreshControl
     }
     
     private func setupDataSource() {
@@ -114,11 +121,27 @@ final class MoviesViewController: UICollectionViewController {
         viewModel.onLoadingStateChange = { [weak self] isLoading in
             guard let self else { return }
             DispatchQueue.main.async {
-                if isLoading && self.viewModel.movies.isEmpty {
-                    self.showLoaderView()
-                } else {
-                    self.removeLoderView()
-                }
+                self.updateRefreshControl(isLoading: isLoading)
+                self.updateLoaderView(
+                    isLoading: isLoading,
+                    areMoviesEmpty: self.viewModel.movies.isEmpty
+                )
+            }
+        }
+    }
+    
+    private func updateLoaderView(isLoading: Bool, areMoviesEmpty: Bool) {
+        if isLoading && self.viewModel.movies.isEmpty {
+            self.showLoaderView()
+        } else {
+            self.removeLoderView()
+        }
+    }
+    
+    private func updateRefreshControl(isLoading: Bool) {
+        if let refreshControl = self.collectionView.refreshControl {
+            if !isLoading && refreshControl.isRefreshing {
+                self.collectionView.refreshControl?.endRefreshing()
             }
         }
     }
@@ -135,6 +158,10 @@ final class MoviesViewController: UICollectionViewController {
         }
         
         present(alert, animated: true)
+    }
+    
+    @objc private func refreshMovies() {
+        viewModel.refreshMovies()
     }
 }
 
