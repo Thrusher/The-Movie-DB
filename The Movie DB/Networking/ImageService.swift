@@ -11,7 +11,7 @@ protocol ImageServiceProtocol {
     func loadImage(from urlString: String, completion: @escaping (UIImage?) -> Void)
 }
 
-class ImageService: ImageServiceProtocol {
+final class ImageService: ImageServiceProtocol {
     private let cache = NSCache<NSString, UIImage>()
 
     private func setImage(_ image: UIImage, forKey key: String) {

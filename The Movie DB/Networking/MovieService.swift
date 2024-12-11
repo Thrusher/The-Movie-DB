@@ -12,7 +12,7 @@ protocol MovieServiceProtocol {
     func searchMovies(query: String, page: Int) async throws -> [Movie]
 }
 
-class MovieService: MovieServiceProtocol {
+final class MovieService: MovieServiceProtocol {
     
     private let apiClient: APIClientProtocol
     

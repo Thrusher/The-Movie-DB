@@ -7,9 +7,11 @@
 
 import UIKit
 
-class MoviesViewController: UICollectionViewController {
+final class MoviesViewController: UICollectionViewController {
 
     private let viewModel: MoviesViewModel
+    private weak var loaderView: LoaderView?
+    
     var didSelectMovie: ((Movie) -> Void)?
 
     init(viewModel: MoviesViewModel) {
@@ -33,6 +35,25 @@ class MoviesViewController: UICollectionViewController {
         collectionView.backgroundColor = .systemBackground
         collectionView.register(MovieCell.self, forCellWithReuseIdentifier: MovieCell.cellIdentifier)
     }
+    
+    private func showLoaderView() {
+        let loaderView = LoaderView()
+        loaderView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(loaderView)
+
+        NSLayoutConstraint.activate([
+            loaderView.topAnchor.constraint(equalTo: view.topAnchor),
+            loaderView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            loaderView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            loaderView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
+        
+        self.loaderView = loaderView
+    }
+    
+    private func removeLoderView() {
+        loaderView?.removeFromSuperview()
+    }
 
     private func bindViewModel() {
         viewModel.onMoviesUpdated = { [weak self] in
@@ -46,6 +67,17 @@ class MoviesViewController: UICollectionViewController {
                 guard let self else { return }
                 self.showErrorAlert(message: error, showRetryButton: self.viewModel.movies.isEmpty) {
                     self.viewModel.fetchMovies()
+                }
+            }
+        }
+        
+        viewModel.onLoadingStateChange = { [weak self] isLoading in
+            guard let self else { return }
+            DispatchQueue.main.async {
+                if isLoading {
+                    self.showLoaderView()
+                } else {
+                    self.removeLoderView()
                 }
             }
         }

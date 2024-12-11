@@ -7,12 +7,16 @@
 
 import Foundation
 
-class MoviesViewModel {
+final class MoviesViewModel {
     let movieService: MovieServiceProtocol
     let imageService: ImageServiceProtocol
     
     private var currentPage = 1
-    private var isLoading = false
+    private var isLoading = false {
+        didSet {
+            onLoadingStateChange?(isLoading)
+        }
+    }
 
     var movies: [Movie] = [] {
         didSet {
@@ -22,6 +26,7 @@ class MoviesViewModel {
     
     var onMoviesUpdated: (() -> Void)?
     var onError: ((String) -> Void)?
+    var onLoadingStateChange: ((Bool) -> Void)?
     
     init(movieService: MovieServiceProtocol, imageService: ImageServiceProtocol) {
         self.movieService = movieService
@@ -42,7 +47,7 @@ class MoviesViewModel {
                 let newMovies = try await movieService.fetchNowPlayingMovies(page: currentPage)
                 currentPage += 1
                 movies.append(contentsOf: newMovies)
-                isLoading = false
+                self.isLoading = false
             } catch let error as APIError {
                 isLoading = false
                 onError?(error.errorDescription ?? "An unexpected error occurred.")
