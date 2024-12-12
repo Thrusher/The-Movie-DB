@@ -23,6 +23,7 @@ final class MoviesViewController: UICollectionViewController {
     init(viewModel: MoviesViewModel) {
         self.viewModel = viewModel
         super.init(collectionViewLayout: .createCompositionalLayout())
+        self.viewModel.delegate = self
     }
 
     required init?(coder: NSCoder) {
@@ -35,7 +36,6 @@ final class MoviesViewController: UICollectionViewController {
         setupCollectionView()
         setupRefreshControl()
         setupDataSource()
-        bindViewModel()
         viewModel.fetchMovies()
     }
     
@@ -70,6 +70,8 @@ final class MoviesViewController: UICollectionViewController {
     }
     
     private func showLoaderView() {
+        guard self.loaderView != nil else { return }
+        
         let loaderView = LoaderView()
         loaderView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(loaderView)
@@ -88,8 +90,8 @@ final class MoviesViewController: UICollectionViewController {
         loaderView?.removeFromSuperview()
     }
     
-    private func applySnapshot(animatingDifferences: Bool = true) {
-        let movieIDs = viewModel.movies.map { $0.id }
+    private func applySnapshot(movies: [Movie]) {
+        let movieIDs = movies.map { $0.id }
         let duplicates = movieIDs.filter { id in
             movieIDs.filter { $0 == id }.count > 1
         }
@@ -99,35 +101,7 @@ final class MoviesViewController: UICollectionViewController {
         var snapshot = NSDiffableDataSourceSnapshot<MoviesSection, Movie>()
         snapshot.appendSections([.main])
         snapshot.appendItems(viewModel.movies, toSection: .main)
-        dataSource.apply(snapshot, animatingDifferences: animatingDifferences)
-    }
-
-    private func bindViewModel() {
-        viewModel.onMoviesUpdated = { [weak self] in
-            DispatchQueue.main.async {
-                self?.applySnapshot()
-            }
-        }
-
-        viewModel.onError = { [weak self] error in
-            DispatchQueue.main.async {
-                guard let self else { return }
-                self.showErrorAlert(message: error, showRetryButton: self.viewModel.movies.isEmpty) {
-                    self.viewModel.fetchMovies()
-                }
-            }
-        }
-        
-        viewModel.onLoadingStateChange = { [weak self] isLoading in
-            guard let self else { return }
-            DispatchQueue.main.async {
-                self.updateRefreshControl(isLoading: isLoading)
-                self.updateLoaderView(
-                    isLoading: isLoading,
-                    areMoviesEmpty: self.viewModel.movies.isEmpty
-                )
-            }
-        }
+        dataSource.apply(snapshot, animatingDifferences: true)
     }
     
     private func updateLoaderView(isLoading: Bool, areMoviesEmpty: Bool) {
@@ -169,5 +143,27 @@ extension MoviesViewController {
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let movie = viewModel.movies[indexPath.row]
         didSelectMovie?(movie)
+    }
+}
+
+extension MoviesViewController: MoviesViewModelDelegate {
+
+    func moviesViewModel(_ viewModel: MoviesViewModel, didUpdateMovies movies: [Movie]) {
+        applySnapshot(movies: movies)
+    }
+
+    func moviesViewModel(_ viewModel: MoviesViewModel, didEncounterError error: String) {
+        showErrorAlert(message: error, showRetryButton: viewModel.movies.isEmpty) { [weak self] in
+            self?.showLoaderView()
+            viewModel.fetchMovies()
+        }
+    }
+
+    func moviesViewModel(_ viewModel: MoviesViewModel, didChangeLoadingState isLoading: Bool) {
+        updateRefreshControl(isLoading: isLoading)
+        updateLoaderView(
+            isLoading: isLoading,
+            areMoviesEmpty: viewModel.movies.isEmpty
+        )
     }
 }
