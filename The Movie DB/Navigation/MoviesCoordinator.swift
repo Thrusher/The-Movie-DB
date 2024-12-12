@@ -25,14 +25,14 @@ class MoviesCoordinator: Coordinator {
                                         imageService: imageCacheService)
         let moviesViewController = MoviesViewController(viewModel: viewModel)
         moviesViewController.didSelectMovie = { [weak self] movie in
-            self?.showMovieDetails(movie)
+            self?.showMovieDetails(movie, imageService: imageCacheService)
         }
         navigationController.pushViewController(moviesViewController, animated: true)
     }
 
-    private func showMovieDetails(_ movie: Movie) {
+    private func showMovieDetails(_ movie: Movie, imageService: ImageService) {
         let detailsViewController = MovieDetailsViewController(movie: movie,
-                                                          imageService: ImageService())
+                                                          imageService: imageService)
         navigationController.pushViewController(detailsViewController, animated: true)
     }
 }
