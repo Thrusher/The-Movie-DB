@@ -31,7 +31,8 @@ class MoviesCoordinator: Coordinator {
     }
 
     private func showMovieDetails(_ movie: Movie) {
-        let detailsViewController = MovieDetailsViewController(movie: movie)
+        let detailsViewController = MovieDetailsViewController(movie: movie,
+                                                          imageService: ImageService())
         navigationController.pushViewController(detailsViewController, animated: true)
     }
 }

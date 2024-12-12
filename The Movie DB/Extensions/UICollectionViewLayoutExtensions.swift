@@ -25,7 +25,7 @@ extension UICollectionViewLayout {
                 heightDimension: .absolute(cellHeight)
             )
             let item = NSCollectionLayoutItem(layoutSize: itemSize)
-            item.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+            item.contentInsets = NSDirectionalEdgeInsets.zero
 
             let groupSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0),
