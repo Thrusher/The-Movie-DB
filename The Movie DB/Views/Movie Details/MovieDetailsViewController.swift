@@ -21,6 +21,11 @@ class MovieDetailsViewController: UIViewController {
     // MARK: - Properties
     private let movie: Movie
     private let imageService: ImageServiceProtocol
+    private let favoritesManager: FavoritesManagerProtocol
+    
+    private var isFavorite: Bool {
+        favoritesManager.isFavorite(movieID: movie.id)
+    }
 
     // MARK: - UI Elements
     private let posterImageView: UIImageView = {
@@ -78,9 +83,10 @@ class MovieDetailsViewController: UIViewController {
     }()
 
     // MARK: - Init
-    init(movie: Movie, imageService: ImageServiceProtocol) {
+    init(movie: Movie, imageService: ImageServiceProtocol, favoritesManager: FavoritesManagerProtocol) {
         self.movie = movie
         self.imageService = imageService
+        self.favoritesManager = favoritesManager
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -92,11 +98,16 @@ class MovieDetailsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        setupNavigationBar()
         setupUI()
         configure(with: movie, imageService: imageService)
     }
-
+    
     // MARK: - Setup UI
+    private func setupNavigationBar() {
+        updateFavoriteButton()
+    }
+
     private func setupUI() {
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
@@ -158,6 +169,24 @@ class MovieDetailsViewController: UIViewController {
         } else {
             posterImageView.image = placeholderImage
         }
+    }
+    
+    private func updateFavoriteButton() {
+        let favoriteIcon = isFavorite ? "star.fill" : "star"
+        let favoriteButton = UIBarButtonItem(
+            image: UIImage(systemName: favoriteIcon),
+            style: .plain,
+            target: self,
+            action: #selector(favoriteButtonTapped)
+        )
+        favoriteButton.tintColor = .systemYellow
+        navigationItem.rightBarButtonItem = favoriteButton
+    }
+
+    // MARK: - Button Actions
+    @objc private func favoriteButtonTapped() {
+        favoritesManager.toggleFavorite(movieID: movie.id)
+        updateFavoriteButton()
     }
 }
 

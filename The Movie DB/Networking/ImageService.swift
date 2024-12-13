@@ -13,35 +13,51 @@ protocol ImageServiceProtocol {
 
 final class ImageService: ImageServiceProtocol {
     private let cache = NSCache<NSString, UIImage>()
-
+    
     private func setImage(_ image: UIImage, forKey key: String) {
         cache.setObject(image, forKey: NSString(string: key))
     }
-
+    
     private func getImage(forKey key: String) -> UIImage? {
         return cache.object(forKey: NSString(string: key))
     }
     
     func loadImage(from urlString: String, completion: @escaping (UIImage?) -> Void) {
-
-        if let cachedImage = getImage(forKey: urlString) {
-            completion(cachedImage)
-            return
-        }
-
-        guard let url = URL(string: urlString) else {
-            completion(nil)
-            return
-        }
-        
-        URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
-            guard let self, let data = data, let image = UIImage(data: data) else {
-                completion(nil)
+        DispatchQueue.global(qos: .userInteractive).async { [weak self] in
+            guard let self else {
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
                 return
             }
             
-            self.setImage(image, forKey: urlString)
-            completion(image)
-        }.resume()
+            if let cachedImage = getImage(forKey: urlString) {
+                DispatchQueue.main.async {
+                    completion(cachedImage)
+                }
+                return
+            }
+            
+            guard let url = URL(string: urlString) else {
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+                return
+            }
+            
+            URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
+                guard let self, let data = data, let image = UIImage(data: data) else {
+                    DispatchQueue.main.async {
+                        completion(nil)
+                    }
+                    return
+                }
+                
+                self.setImage(image, forKey: urlString)
+                DispatchQueue.main.async {
+                    completion(image)
+                }
+            }.resume()
+        }
     }
 }

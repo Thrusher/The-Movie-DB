@@ -13,7 +13,7 @@ final class MoviesViewController: UICollectionViewController {
         case main
     }
     
-    private var dataSource: UICollectionViewDiffableDataSource<MoviesSection, Movie>!
+    private var dataSource: UICollectionViewDiffableDataSource<MoviesSection, MovieCellViewModel>?
 
     private let viewModel: MoviesViewModel
     private weak var loaderView: LoaderView?
@@ -51,7 +51,7 @@ final class MoviesViewController: UICollectionViewController {
 
     private func setupCollectionView() {
         collectionView.backgroundColor = .systemBackground
-        collectionView.register(MovieCell.self, forCellWithReuseIdentifier: MovieCell.cellIdentifier)
+        collectionView.register(MovieCell.self, forCellWithReuseIdentifier: MovieCellViewModel.cellIdentifier)
     }
     
     private func setupRefreshControl() {
@@ -61,16 +61,15 @@ final class MoviesViewController: UICollectionViewController {
     }
     
     private func setupDataSource() {
-        dataSource = UICollectionViewDiffableDataSource<MoviesSection, Movie>(collectionView: collectionView) { collectionView, indexPath, movie in
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MovieCell.cellIdentifier, for: indexPath) as! MovieCell
-            let movie = self.viewModel.movies[indexPath.row]
-            cell.configure(with: movie, imageService: self.viewModel.imageService)
+        dataSource = UICollectionViewDiffableDataSource<MoviesSection, MovieCellViewModel>(collectionView: collectionView) { collectionView, indexPath, cellModel in
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MovieCellViewModel.cellIdentifier, for: indexPath) as! MovieCell
+            cell.configure(with: cellModel)
             return cell
         }
     }
     
     private func showLoaderView() {
-        guard self.loaderView != nil else { return }
+        guard self.loaderView == nil else { return }
         
         let loaderView = LoaderView()
         loaderView.translatesAutoresizingMaskIntoConstraints = false
@@ -90,22 +89,27 @@ final class MoviesViewController: UICollectionViewController {
         loaderView?.removeFromSuperview()
     }
     
-    private func applySnapshot(movies: [Movie]) {
-        let movieIDs = movies.map { $0.id }
+    private func applySnapshot(movieCellModels: [MovieCellViewModel]) {
+        guard dataSource != nil else {
+            assertionFailure("dataSource should be nil")
+            return
+        }
+        
+        let movieIDs = movieCellModels.map { $0.id }
         let duplicates = movieIDs.filter { id in
             movieIDs.filter { $0 == id }.count > 1
         }
 
         assert(duplicates.isEmpty, "Duplicate movie IDs found: \(duplicates)")
         
-        var snapshot = NSDiffableDataSourceSnapshot<MoviesSection, Movie>()
+        var snapshot = NSDiffableDataSourceSnapshot<MoviesSection, MovieCellViewModel>()
         snapshot.appendSections([.main])
-        snapshot.appendItems(viewModel.movies, toSection: .main)
-        dataSource.apply(snapshot, animatingDifferences: true)
+        snapshot.appendItems(movieCellModels, toSection: .main)
+        dataSource?.apply(snapshot, animatingDifferences: true)
     }
     
     private func updateLoaderView(isLoading: Bool, areMoviesEmpty: Bool) {
-        if isLoading && self.viewModel.movies.isEmpty {
+        if isLoading && areMoviesEmpty {
             self.showLoaderView()
         } else {
             self.removeLoderView()
@@ -147,11 +151,10 @@ extension MoviesViewController {
 }
 
 extension MoviesViewController: MoviesViewModelDelegate {
-
-    func moviesViewModel(_ viewModel: MoviesViewModel, didUpdateMovies movies: [Movie]) {
-        applySnapshot(movies: movies)
+    func moviesViewModel(_ viewModel: MoviesViewModel, didUpdateMovies movieCellModels: [MovieCellViewModel]) {
+        applySnapshot(movieCellModels: movieCellModels)
     }
-
+    
     func moviesViewModel(_ viewModel: MoviesViewModel, didEncounterError error: String) {
         showErrorAlert(message: error, showRetryButton: viewModel.movies.isEmpty) { [weak self] in
             self?.showLoaderView()

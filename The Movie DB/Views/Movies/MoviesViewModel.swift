@@ -8,7 +8,7 @@
 import Foundation
 
 protocol MoviesViewModelDelegate: AnyObject {
-    func moviesViewModel(_ viewModel: MoviesViewModel, didUpdateMovies movies: [Movie])
+    func moviesViewModel(_ viewModel: MoviesViewModel, didUpdateMovies movieCellModels: [MovieCellViewModel])
     func moviesViewModel(_ viewModel: MoviesViewModel, didEncounterError error: String)
     func moviesViewModel(_ viewModel: MoviesViewModel, didChangeLoadingState isLoading: Bool)
 }
@@ -16,6 +16,7 @@ protocol MoviesViewModelDelegate: AnyObject {
 final class MoviesViewModel {
     let movieService: MovieServiceProtocol
     let imageService: ImageServiceProtocol
+    let favoritesManager: FavoritesManagerProtocol
     
     private var currentPage = 1
     private var totalPages = 1
@@ -26,17 +27,29 @@ final class MoviesViewModel {
         }
     }
 
-    var movies: [Movie] = [] {
+    private(set) var movies: [Movie] = [] {
         didSet {
-            delegate?.moviesViewModel(self, didUpdateMovies: movies)
+            createCellViewModels(from: movies)
+        }
+    }
+    
+    private(set) var movieCellModels: [MovieCellViewModel] = [] {
+        didSet {
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.delegate?.moviesViewModel(self, didUpdateMovies: self.movieCellModels)
+            }
         }
     }
     
     weak var delegate: MoviesViewModelDelegate?
     
-    init(movieService: MovieServiceProtocol, imageService: ImageServiceProtocol) {
+    init(movieService: MovieServiceProtocol,
+         imageService: ImageServiceProtocol,
+         favoritesManager: FavoritesManagerProtocol) {
         self.movieService = movieService
         self.imageService = imageService
+        self.favoritesManager = favoritesManager
     }
 
     func fetchMovies(reset: Bool = false) {
@@ -91,6 +104,12 @@ final class MoviesViewModel {
             guard let self else { return }
             self.isLoading = false
             self.delegate?.moviesViewModel(self, didEncounterError: errorDescription)
+        }
+    }
+    
+    private func createCellViewModels(from movies: [Movie]) {
+        movieCellModels = movies.map { movie in
+            MovieCellViewModel(movie: movie, imageService: imageService, favoritesManager: favoritesManager)
         }
     }
 }
